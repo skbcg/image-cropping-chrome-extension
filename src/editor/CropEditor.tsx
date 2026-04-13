@@ -11,6 +11,14 @@ const AUTO_ZOOM_STEP = 0.045;
 const AUTO_ZOOM_MIN_INTERVAL_MS = 320;
 const VIEW_MARGIN = 8;
 
+const LOADING_QUIPS = [
+  'Rounding up megapixels…',
+  'Sharpening the virtual scissors…',
+  'Pixel caravan en route…',
+  'Calibrating crop mojo…',
+  'Almost picture-perfect…',
+];
+
 type ResizeCorner = 'tl' | 'tr' | 'bl' | 'br' | null;
 
 export type UrlDimensionControls = {
@@ -53,6 +61,7 @@ export function CropEditor({
   const containerRef = useRef<HTMLDivElement>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quipIndex, setQuipIndex] = useState(0);
   const [name, setName] = useState(customName);
 
   const [zoom, setZoom] = useState(1);
@@ -83,6 +92,9 @@ export function CropEditor({
   const blurSeverity = effectiveCropSize < TARGET_SIZE * 0.5 ? 'critical' : 'warning';
   const qualityPercent = effectiveCropSize > 0 ? Math.min(100, Math.round((effectiveCropSize / TARGET_SIZE) * 100)) : 0;
   const zoomPercent = Math.round(zoom * 100);
+  const showLoadingOverlay = loading || isRefetching || !localDataUrl;
+  const loadingCaption =
+    isRefetching && localDataUrl ? 'Applying new URL size…' : 'Fetching image for editing…';
 
   const lastContainerSizeRef = useRef({ w: 0, h: 0 });
   const layoutStateRef = useRef({
@@ -135,6 +147,11 @@ export function CropEditor({
 
   useEffect(() => {
     let cancelled = false;
+    if (!localDataUrl) {
+      setLoading(true);
+      setImg(null);
+      return;
+    }
     setLoading(true);
     const image = new Image();
     image.onload = () => {
@@ -144,13 +161,25 @@ export function CropEditor({
       }
     };
     image.onerror = () => {
-      if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setImg(null);
+        setLoading(false);
+      }
     };
     image.src = localDataUrl;
     return () => {
       cancelled = true;
     };
   }, [localDataUrl]);
+
+  useEffect(() => {
+    if (!loading && !isRefetching) return;
+    setQuipIndex(0);
+    const id = window.setInterval(() => {
+      setQuipIndex((i) => (i + 1) % LOADING_QUIPS.length);
+    }, 2400);
+    return () => clearInterval(id);
+  }, [loading, isRefetching]);
 
   useEffect(() => {
     if (!img || !containerRef.current) return;
@@ -632,19 +661,39 @@ export function CropEditor({
     onDownload(name || 'image', crop, jpegDataUrl, previewDataUrl);
   };
 
+  const hasWidthDimensionControl =
+    urlDimensions != null && urlDimensions.widthKey != null && urlDimensions.widthValue != null;
+  const hasHeightDimensionControl =
+    urlDimensions != null && urlDimensions.heightKey != null && urlDimensions.heightValue != null;
+
+  const urlDimsDirty =
+    urlDimensions != null &&
+    (urlDimensions.originalWidth != null || urlDimensions.originalHeight != null) &&
+    ((urlDimensions.originalWidth != null &&
+      urlDimensions.widthValue != null &&
+      urlDimensions.widthValue !== urlDimensions.originalWidth) ||
+      (urlDimensions.originalHeight != null &&
+        urlDimensions.heightValue != null &&
+        urlDimensions.heightValue !== urlDimensions.originalHeight));
+
+  const showWidthClearAffordance = Boolean(urlDimsDirty && hasWidthDimensionControl);
+  const showHeightClearAffordance = Boolean(
+    urlDimsDirty && !hasWidthDimensionControl && hasHeightDimensionControl,
+  );
+
   return (
     <div className="oem-crop-editor" role="dialog" aria-label="Crop and rename image">
       <div className="oem-crop-editor__header">
         <div className="oem-crop-editor__badges">
           <h2 className="oem-crop-editor__title">Crop & Rename</h2>
-          {!loading && img && isBlurry && (
+          {!showLoadingOverlay && img && isBlurry && (
             <span
               className={`oem-crop-editor__badge ${blurSeverity === 'critical' ? 'oem-crop-editor__badge--critical' : 'oem-crop-editor__badge--warn'}`}
             >
               {effectiveCropSize}×{effectiveCropSize}px — will upscale ({qualityPercent}% quality)
             </span>
           )}
-          {!loading && img && !isBlurry && effectiveCropSize > 0 && (
+          {!showLoadingOverlay && img && !isBlurry && effectiveCropSize > 0 && (
             <span className="oem-crop-editor__badge oem-crop-editor__badge--ok">
               {effectiveCropSize}×{effectiveCropSize}px → 1200×1200
             </span>
@@ -656,11 +705,28 @@ export function CropEditor({
       </div>
 
       <div ref={containerRef} className="oem-crop-editor__canvas-wrap">
-        {(loading || isRefetching) && (
-          <div className="oem-crop-editor__loading">
-            <div className="oem-crop-editor__spinner" aria-hidden />
-            <p className="oem-crop-editor__title" style={{ fontSize: 13, fontWeight: 400 }}>
-              {isRefetching && !loading ? 'Applying URL size…' : 'Loading image for editing…'}
+        {showLoadingOverlay && (
+          <div
+            className="oem-crop-editor__loading"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            aria-label={loadingCaption}
+          >
+            <div className="oem-crop-editor__loading-stage" aria-hidden>
+              <span className="oem-crop-editor__loading-frame oem-crop-editor__loading-frame--tl" />
+              <span className="oem-crop-editor__loading-frame oem-crop-editor__loading-frame--tr" />
+              <span className="oem-crop-editor__loading-frame oem-crop-editor__loading-frame--bl" />
+              <span className="oem-crop-editor__loading-frame oem-crop-editor__loading-frame--br" />
+              <div className="oem-crop-editor__loading-orbit">
+                <span className="oem-crop-editor__loading-dot" />
+                <span className="oem-crop-editor__loading-dot" />
+                <span className="oem-crop-editor__loading-dot" />
+              </div>
+            </div>
+            <p className="oem-crop-editor__loading-title">{loadingCaption}</p>
+            <p className="oem-crop-editor__loading-quip" key={quipIndex}>
+              {LOADING_QUIPS[quipIndex]}
             </p>
           </div>
         )}
@@ -671,7 +737,7 @@ export function CropEditor({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         />
-        {!loading && img && (
+        {!showLoadingOverlay && img && (
           <div className="oem-crop-editor__zoom">
             <button type="button" onClick={() => handleZoom(-ZOOM_STEP)} title="Zoom out">
               −
@@ -684,17 +750,15 @@ export function CropEditor({
         )}
       </div>
 
-      {urlDimensions &&
-        ((urlDimensions.heightKey != null && urlDimensions.heightValue != null) ||
-          urlDimensions.originalWidth != null ||
-          urlDimensions.originalHeight != null) && (
+      {urlDimensions && urlDimensions.heightKey != null && urlDimensions.heightValue != null && (
         <div className="oem-crop-editor__source-params" aria-label="Image URL size parameters">
           <div className="oem-crop-editor__dimension-grid">
-            {urlDimensions.heightKey != null && urlDimensions.heightValue != null && (
-              <div className="oem-crop-editor__field oem-crop-editor__field--compact">
-                <label htmlFor="oem-crop-height">Height ({urlDimensions.heightKey})</label>
+            <div className="oem-crop-editor__field oem-crop-editor__field--compact">
+              <label htmlFor="oem-crop-height">Height ({urlDimensions.heightKey})</label>
+              <div className="oem-crop-editor__input-clear-wrap oem-crop-editor__input-clear-wrap--compact">
                 <input
                   id="oem-crop-height"
+                  className={showHeightClearAffordance ? 'oem-crop-editor__input--with-clear' : undefined}
                   type="number"
                   min={1}
                   step={1}
@@ -704,17 +768,22 @@ export function CropEditor({
                     if (!Number.isNaN(v)) urlDimensions.onHeightChange(v);
                   }}
                 />
+                {showHeightClearAffordance && (
+                  <button
+                    type="button"
+                    className="oem-crop-editor__input-clear"
+                    aria-label="Reset dimensions to original URL size"
+                    title="Reset dimensions"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      urlDimensions.onResetDimensions();
+                    }}
+                  >
+                    <span aria-hidden>×</span>
+                  </button>
+                )}
               </div>
-            )}
-            {(urlDimensions.originalWidth != null || urlDimensions.originalHeight != null) && (
-              <button
-                type="button"
-                className="oem-crop-editor__btn oem-crop-editor__btn--ghost"
-                onClick={urlDimensions.onResetDimensions}
-              >
-                Reset sizes
-              </button>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -733,17 +802,34 @@ export function CropEditor({
           {urlDimensions && urlDimensions.widthKey != null && urlDimensions.widthValue != null && (
             <div className="oem-crop-editor__field oem-crop-editor__field--compact oem-crop-editor__field--url-width">
               <label htmlFor="oem-crop-width">Width ({urlDimensions.widthKey})</label>
-              <input
-                id="oem-crop-width"
-                type="number"
-                min={1}
-                step={1}
-                value={urlDimensions.widthValue}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value, 10);
-                  if (!Number.isNaN(v)) urlDimensions.onWidthChange(v);
-                }}
-              />
+              <div className="oem-crop-editor__input-clear-wrap oem-crop-editor__input-clear-wrap--footer-width">
+                <input
+                  id="oem-crop-width"
+                  className={showWidthClearAffordance ? 'oem-crop-editor__input--with-clear' : undefined}
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={urlDimensions.widthValue}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    if (!Number.isNaN(v)) urlDimensions.onWidthChange(v);
+                  }}
+                />
+                {showWidthClearAffordance && (
+                  <button
+                    type="button"
+                    className="oem-crop-editor__input-clear"
+                    aria-label="Reset dimensions to original URL size"
+                    title="Reset dimensions"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      urlDimensions.onResetDimensions();
+                    }}
+                  >
+                    <span aria-hidden>×</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -755,7 +841,7 @@ export function CropEditor({
             type="button"
             className="oem-crop-editor__btn oem-crop-editor__btn--primary"
             onClick={handleDownload}
-            disabled={loading || isRefetching || !img}
+            disabled={showLoadingOverlay || !img}
             title="Download 1200×1200 JPEG with the current crop"
             aria-label="Download cropped image as JPEG"
           >

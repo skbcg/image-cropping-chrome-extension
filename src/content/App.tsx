@@ -209,24 +209,27 @@ export function App() {
 
     const isHttp = /^https?:/i.test(raw);
     if (!isHttp) {
+      setEditor({
+        sourceUrl: raw,
+        localDataUrl: '',
+        alt: img.alt || 'image',
+        customName: defaultFilenameFromUrl(raw),
+        widthKey: null,
+        heightKey: null,
+        widthValue: null,
+        heightValue: null,
+        originalWidth: null,
+        originalHeight: null,
+        refetching: false,
+      });
+      setSelectionMode(false);
       try {
         const { dataUrl } = await fetchImageAsDataUrl(raw);
-        setEditor({
-          sourceUrl: raw,
-          localDataUrl: dataUrl,
-          alt: img.alt || 'image',
-          customName: defaultFilenameFromUrl(raw),
-          widthKey: null,
-          heightKey: null,
-          widthValue: null,
-          heightValue: null,
-          originalWidth: null,
-          originalHeight: null,
-          refetching: false,
-        });
-        setSelectionMode(false);
+        setEditor((e) => (e ? { ...e, localDataUrl: dataUrl } : null));
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'Failed to load image.');
+        setEditor(null);
+        setSelectionMode(true);
       }
       return;
     }
@@ -234,29 +237,35 @@ export function App() {
     const sourceUrl = stripCropNamesFromUrl(raw);
     const det = detectDimensionsFromUrl(sourceUrl);
 
+    setEditor({
+      sourceUrl,
+      localDataUrl: '',
+      alt: img.alt || 'image',
+      customName: defaultFilenameFromUrl(raw),
+      widthKey: det.widthKey,
+      heightKey: det.heightKey,
+      widthValue: det.widthValue,
+      heightValue: det.heightValue,
+      originalWidth: det.widthValue,
+      originalHeight: det.heightValue,
+      refetching: false,
+    });
+    setSelectionMode(false);
+
     try {
       const { dataUrl } = await fetchImageAsDataUrl(sourceUrl);
-      setEditor({
-        sourceUrl,
-        localDataUrl: dataUrl,
-        alt: img.alt || 'image',
-        customName: defaultFilenameFromUrl(raw),
-        widthKey: det.widthKey,
-        heightKey: det.heightKey,
-        widthValue: det.widthValue,
-        heightValue: det.heightValue,
-        originalWidth: det.widthValue,
-        originalHeight: det.heightValue,
-        refetching: false,
-      });
-      setSelectionMode(false);
+      setEditor((e) => (e ? { ...e, localDataUrl: dataUrl } : null));
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'Failed to load image.');
+      setEditor(null);
+      setSelectionMode(true);
     }
   };
 
   const closeEditor = () => {
     setEditor(null);
+    setLoadError(null);
+    setSelectionMode(true);
   };
 
   const widthScaleFactor =
@@ -285,36 +294,45 @@ export function App() {
         <>
           <div className="oem-overlay-root oem-overlay-root--active" aria-hidden={false}>
             {rects.map(({ img, top, left, width, height }, index) => {
-              const bannerHeight = Math.min(44, Math.max(28, height));
               return (
                 <div
                   key={`${img.src}-${index}-${left}-${top}`}
                   className="oem-image-target"
                   style={{ top, left, width, height }}
-                  aria-hidden
-                >
-                  <button
-                    type="button"
-                    className="oem-image-banner"
-                    style={{ height: bannerHeight }}
-                    title="Crop this image"
-                    onClick={(e) => {
+                  role="button"
+                  tabIndex={0}
+                  title="Crop this image"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void openEditor(img);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      e.stopPropagation();
                       void openEditor(img);
-                    }}
-                  >
-                    <span className="oem-image-banner__accent" aria-hidden />
+                    }
+                  }}
+                >
+                  <div className="oem-image-banner">
                     <span className="oem-image-banner__main">
-                      <span className="oem-image-banner__text">Crop</span>
-                      <span className="oem-image-banner__sub">Click to open editor</span>
+                      <svg className="oem-image-banner__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2v14a2 2 0 0 0 2 2h14"></path>
+                        <path d="M18 22V8a2 2 0 0 0-2-2H2"></path>
+                      </svg>
+                      <span className="oem-image-banner__text">Crop Image</span>
                     </span>
-                  </button>
+                  </div>
                 </div>
               );
             })}
           </div>
-          <div className="oem-hint">Click a crop banner on an image. Press the extension icon again to exit.</div>
+          <div className="oem-hint">
+            <span className="oem-hint__mode">Crop mode</span>
+            <span className="oem-hint__body">
+              Click a crop banner on an image. Press the extension icon again to exit.
+            </span>
+          </div>
         </>
       )}
 
