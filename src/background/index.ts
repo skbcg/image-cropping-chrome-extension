@@ -43,7 +43,16 @@ chrome.runtime.onMessage.addListener(
     sendResponse: (r: FetchImageResponse | DownloadImageResponse) => void,
   ) => {
     if (isDownloadImageMessage(message)) {
-      chrome.downloads.download(
+      const downloads = chrome.downloads;
+      if (!downloads || typeof downloads.download !== 'function') {
+        sendResponse({
+          success: false,
+          error:
+            'downloads API unavailable (reload the unpacked extension so the "downloads" permission applies)',
+        });
+        return true;
+      }
+      downloads.download(
         { url: message.dataUrl, filename: message.filename, saveAs: true },
         (downloadId) => {
           const err = chrome.runtime.lastError;

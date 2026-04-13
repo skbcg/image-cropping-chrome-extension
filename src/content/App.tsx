@@ -37,18 +37,41 @@ function defaultFilenameFromUrl(url: string): string {
   }
 }
 
+/** Page scripts often patch `document.createElement`; use the native implementation so downloads still work. */
+function trustedCreateAnchor(): HTMLAnchorElement {
+  return Document.prototype.createElement.call(document, 'a') as HTMLAnchorElement;
+}
+
+function downloadDataUrlViaAnchor(filename: string, dataUrl: string) {
+  const a = trustedCreateAnchor();
+  a.href = dataUrl;
+  a.download = filename;
+  a.rel = 'noopener';
+  const body = document.body;
+  if (!body) {
+    console.error('downloadDataUrlViaAnchor: document.body is missing');
+    return;
+  }
+  Node.prototype.appendChild.call(body, a);
+  HTMLElement.prototype.click.call(a);
+  if (a.parentNode) Node.prototype.removeChild.call(a.parentNode, a);
+}
+
 async function downloadJpeg(filename: string, dataUrl: string) {
   const safe = filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\.+/g, '.') || 'image';
   const base = safe.replace(/\.(jpe?g|png)$/i, '') || 'image';
   const name = /\.jpe?g$/i.test(safe) ? safe : `${base}.jpg`;
   const msg: DownloadImageMessage = { type: 'DOWNLOAD_IMAGE', filename: name, dataUrl };
   try {
-    const r = (await chrome.runtime.sendMessage(msg)) as DownloadImageResponse;
-    if (!r.success) {
-      console.error('Download failed:', r.error);
+    const r = (await chrome.runtime.sendMessage(msg)) as DownloadImageResponse | undefined;
+    if (r?.success) return;
+    if (r && !r.success) {
+      console.warn('Background download failed, using in-page fallback:', r.error);
     }
+    downloadDataUrlViaAnchor(name, dataUrl);
   } catch (e) {
-    console.error('Download failed:', e);
+    console.warn('Download message failed, using in-page fallback:', e);
+    downloadDataUrlViaAnchor(name, dataUrl);
   }
 }
 

@@ -6,20 +6,24 @@ import editorCss from '../editor/CropEditor.css?raw';
 
 const ROOT_ID = `${HOST_ID}-root`;
 
+function trustedCreateElement<T extends keyof HTMLElementTagNameMap>(tag: T): HTMLElementTagNameMap[T] {
+  return Document.prototype.createElement.call(document, tag) as HTMLElementTagNameMap[T];
+}
+
 function init() {
   if (document.getElementById(ROOT_ID)) return;
 
-  const host = document.createElement('div');
+  const host = trustedCreateElement('div');
   host.id = ROOT_ID;
   host.style.setProperty('all', 'initial');
   document.documentElement.appendChild(host);
 
   const shadow = host.attachShadow({ mode: 'open' });
-  const style = document.createElement('style');
+  const style = trustedCreateElement('style');
   style.textContent = `${overlayCss}\n${editorCss}`;
   shadow.appendChild(style);
 
-  const reactMount = document.createElement('div');
+  const reactMount = trustedCreateElement('div');
   shadow.appendChild(reactMount);
 
   const root = createRoot(reactMount);
