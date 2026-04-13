@@ -684,29 +684,12 @@ export function CropEditor({
         )}
       </div>
 
-      {urlDimensions && (urlDimensions.widthKey != null || urlDimensions.heightKey != null) && (
+      {urlDimensions &&
+        ((urlDimensions.heightKey != null && urlDimensions.heightValue != null) ||
+          urlDimensions.originalWidth != null ||
+          urlDimensions.originalHeight != null) && (
         <div className="oem-crop-editor__source-params" aria-label="Image URL size parameters">
-          <p className="oem-crop-editor__source-hint">
-            The <code>crop-names</code> parameter was removed from the image request. Adjust width or height to
-            reload from the server (height scales when you change width, matching the OEM tool).
-          </p>
           <div className="oem-crop-editor__dimension-grid">
-            {urlDimensions.widthKey != null && urlDimensions.widthValue != null && (
-              <div className="oem-crop-editor__field oem-crop-editor__field--compact">
-                <label htmlFor="oem-crop-width">Width ({urlDimensions.widthKey})</label>
-                <input
-                  id="oem-crop-width"
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={urlDimensions.widthValue}
-                  onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
-                    if (!Number.isNaN(v)) urlDimensions.onWidthChange(v);
-                  }}
-                />
-              </div>
-            )}
             {urlDimensions.heightKey != null && urlDimensions.heightValue != null && (
               <div className="oem-crop-editor__field oem-crop-editor__field--compact">
                 <label htmlFor="oem-crop-height">Height ({urlDimensions.heightKey})</label>
@@ -737,14 +720,32 @@ export function CropEditor({
       )}
 
       <div className="oem-crop-editor__footer">
-        <div className="oem-crop-editor__field">
-          <label htmlFor="oem-crop-filename">Filename</label>
-          <input
-            id="oem-crop-filename"
-            value={name}
-            onChange={(e) => setName(e.target.value.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, ''))}
-            autoComplete="off"
-          />
+        <div className="oem-crop-editor__footer-fields">
+          <div className="oem-crop-editor__field oem-crop-editor__field--filename">
+            <label htmlFor="oem-crop-filename">Filename</label>
+            <input
+              id="oem-crop-filename"
+              value={name}
+              onChange={(e) => setName(e.target.value.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, ''))}
+              autoComplete="off"
+            />
+          </div>
+          {urlDimensions && urlDimensions.widthKey != null && urlDimensions.widthValue != null && (
+            <div className="oem-crop-editor__field oem-crop-editor__field--compact oem-crop-editor__field--url-width">
+              <label htmlFor="oem-crop-width">Width ({urlDimensions.widthKey})</label>
+              <input
+                id="oem-crop-width"
+                type="number"
+                min={1}
+                step={1}
+                value={urlDimensions.widthValue}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  if (!Number.isNaN(v)) urlDimensions.onWidthChange(v);
+                }}
+              />
+            </div>
+          )}
         </div>
         <div className="oem-crop-editor__actions">
           <button type="button" className="oem-crop-editor__btn" onClick={onClose}>
