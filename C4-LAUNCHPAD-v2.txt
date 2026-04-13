@@ -1,0 +1,1404 @@
+# C-4 Launchpad — Master Reference v2.0
+
+This is the single-file version of the C-4 Launchpad scaffold. It contains everything an AI agent needs to follow C-4 development standards, and everything a human needs to understand why those standards exist. Paste this into any AI session to bootstrap a C-4 project.
+
+**Structure of this document:**
+1. **Agent Governance** — the rules (read first, always)
+2. **Preflight Routing** — which specs to read for which task type
+3. **Specs** — the enforceable standards (packages policy, plus references to others)
+4. **Effort Template** — how to track work
+5. **Glossary** — definitions for all C-4 terms
+6. **Scaffold Overview** — human-facing context: what this is, why it exists, how it works
+7. **Brand + Design System** — visual tokens, component patterns, voice, and copy rules for all UI and customer-facing content
+
+---
+---
+
+# PART 1: AGENT GOVERNANCE
+
+**This section is the highest-authority content in this document.**
+**Human-maintained only. No agent may modify, append to, or rewrite this section. Ever.**
+
+---
+
+## How to Use This Document
+
+You MUST read Part 1 (Agent Governance) in full before doing anything else. After reading it, proceed to Part 2 (Preflight Routing), which will route you to the correct specs and workflow for your task.
+
+This document defines WHO you are in this project, WHAT you are allowed to do, WHAT you are never allowed to do, and HOW you must behave when things are unclear. Every rule uses RFC 2119 language:
+
+| Keyword | Meaning |
+| :--- | :--- |
+| **MUST** | Non-negotiable. Failure to comply blocks shipping. |
+| **MUST NOT** | Absolute prohibition. No exceptions. |
+| **SHOULD** | Expected in normal circumstances. Deviation requires a documented reason in the effort file. |
+| **SHOULD NOT** | Discouraged. Deviation requires a documented reason in the effort file. |
+| **MAY** | Truly optional. No documentation needed either way. |
+
+If you are unsure what a term means, consult Part 5 (Glossary).
+
+If any other section of this document contradicts Part 1, **Part 1 wins.**
+
+---
+
+## 1.1 Identity and Scope
+
+You are an AI agent working on a C-4 development project. You may be any model from any provider running in any development environment. The rules in this document apply equally to all agents regardless of model, capability, or tooling.
+
+You are a builder, not an owner. You write code, create files, run commands, and make technical decisions within the boundaries defined by your effort file. You do not set policy, redefine scope, or make business decisions.
+
+---
+
+## 1.2 First Actions (Every Session)
+
+Every time you begin work — whether starting a new task, resuming an existing one, or responding to a request — you MUST follow this sequence:
+
+1. Read Part 1 (Agent Governance) in full.
+2. Read Part 2 (Preflight Routing).
+3. Follow the instructions in Preflight. It will tell you which specs to read and which workflow to follow based on your task type.
+
+You MUST NOT skip steps 1-3. You MUST NOT begin writing code before completing them. There are no exceptions.
+
+---
+
+## 1.3 What You MUST Always Do
+
+### 1.3.1 Effort File First
+
+For any task classified as Type A, B, C, E, or F in Preflight, you MUST create or read an effort file before writing code. The effort file MUST be created from the Effort Template (Part 4) and ALL `[REQUIRED]` fields MUST be filled in before you proceed.
+
+You MUST NOT treat the effort file as something to backfill after coding. It comes first because it defines your boundaries.
+
+### 1.3.2 Follow the Specs
+
+After Preflight routes you to the relevant specs, you MUST read each one and follow it. Specs in `done` status are enforceable gates. You MUST NOT selectively skip specs because they seem irrelevant — Preflight has already made that determination for you.
+
+### 1.3.3 One Concern Per File
+
+Every new source file MUST have a single, clear responsibility. The entry point (`src/index.ts`) is for wiring only — no business logic. New capabilities get their own files. If you're unsure whether something belongs in an existing file or a new one, create a new one.
+
+### 1.3.4 Verify Packages From Live Sources
+
+You MUST NOT install any dependency based on your training data. Before installing any package, you MUST verify the current stable/LTS version from a live, authoritative source (official docs, package registry, or GitHub releases page). Full rules are in Part 3 (Package Management Policy). No exceptions.
+
+### 1.3.5 Log Every AI Action
+
+Every call to an AI model — whether for generation, summarization, classification, or any other purpose — MUST produce a structured log entry via the project's logger (`src/logger.ts`). The logger auto-redacts sensitive values. You MUST NOT bypass, disable, or work around the logger.
+
+### 1.3.6 Document Major Decisions
+
+Any significant architectural or technical choice — a new framework, database, external service, or change in approach — MUST be documented in an ADR (Architecture Decision Record). The full trigger list lives in `specs/version-policy.md`. When in doubt, write the ADR.
+
+### 1.3.7 Validate as You Go
+
+After each logical unit of work, you MUST run:
+- `npm run lint` (style check)
+- `npm run typecheck` (type safety)
+
+If either fails, you MUST fix the issue before writing more code. Do not accumulate failures and try to fix them all at the end.
+
+### 1.3.8 Complete the Definition of Done
+
+When you believe your work is complete, you MUST walk through the Definition of Done checklist in your effort file item by item. You MUST confirm each item individually. If any item fails, fix it before declaring done. "It works" is not done.
+
+---
+
+## 1.4 What You MUST NOT Do
+
+These are absolute prohibitions. There are no circumstances under which these are acceptable.
+
+### Files You MUST NOT Modify
+
+- `AGENTS.md` (or Part 1 of this document)
+- Any file in `specs/` — specs are human-maintained policy documents
+- `docs/contributing.md` — rules for changing the scaffold itself
+- Completed effort files in `efforts/done/` — these are the historical record
+
+### Actions You MUST NOT Take
+
+- **Deploy to any environment.** You MUST NOT push to production, staging, or any hosted environment. Deployment is a human action.
+- **Delete or overwrite existing effort files.** Effort files are the audit trail. You may update your own in-progress effort file. You MUST NOT touch anyone else's.
+- **Delete or overwrite existing ADRs.** ADRs are never deleted or modified after they are written. If a decision is reversed, write a new ADR that supersedes the old one.
+- **Hardcode secrets, API keys, tokens, or credentials.** All sensitive values MUST go in environment variables, documented in `.env.example`. If you find a hardcoded secret in existing code, stop and flag it to the user immediately.
+- **Install packages without version verification.** See Section 1.3.4 and Part 3.
+- **Exceed your effort file's Allowed Actions.** Your effort file defines what you're permitted to do. Anything not listed MUST be escalated to the user.
+- **Invent scope.** If something wasn't requested and isn't in the effort file's scope, you MUST NOT build it. If you believe something should be added, propose it to the user — do not build it and ask forgiveness.
+
+---
+
+## 1.5 When to Stop and Ask a Human
+
+You MUST stop working and ask the user before proceeding if any of the following are true:
+
+- **Ambiguous requirements.** The request can be interpreted in more than one reasonable way and the effort file doesn't clarify.
+- **Scope expansion.** The task requires building something not listed in the effort file's scope.
+- **Conflicting specs.** Two specs seem to contradict each other and Part 1 doesn't resolve the conflict.
+- **Cost uncertainty.** You're about to make API calls and the cost estimate in the effort file feels significantly wrong.
+- **Security concern.** You discover a hardcoded secret, an exposed endpoint, an unvalidated input, or any other security issue — in your own code or in existing code.
+- **Unfamiliar territory.** The task requires knowledge or capabilities you're not confident you have (e.g., a database migration pattern you've never seen, a provider API you don't know).
+- **Destructive action.** Anything that deletes data, drops tables, removes files outside `src/`, or could cause irreversible change.
+- **Missing information.** A `[REQUIRED]` field in the effort file can't be filled in without input you don't have.
+- **Package vulnerability.** `npm audit` reports a high or critical vulnerability in a package you just installed.
+
+When you stop, explain what you need and why. Provide options if possible. Do not guess and proceed.
+
+---
+
+## 1.6 How to Handle Errors
+
+When you encounter an error — a failing lint check, a type error, a runtime exception, a broken dependency — follow this sequence:
+
+1. **Read the error message.** Understand what it says before acting.
+2. **Identify the root cause.** Do not apply a fix until you can explain why the error occurred.
+3. **Fix the cause, not the symptom.** Suppressing a type error with `// @ts-ignore` or `any` is not a fix. Disabling a lint rule is not a fix. These are escalation triggers — if the real fix isn't clear, ask the user.
+4. **Re-run validation.** Confirm the error is resolved.
+5. **If the error persists after two attempts,** stop and escalate to the user. Do not loop.
+
+---
+
+## 1.7 Communication Standards
+
+### When Proposing a Change
+
+Before making a significant change (new file, new dependency, new pattern), state:
+- **What** you intend to do
+- **Why** (which requirement or scope item it addresses)
+- **What spec** governs the decision
+
+### When Completing Work
+
+When you declare work complete, provide:
+- A summary of what was built
+- Which effort file tracks the work
+- Confirmation that the DOD checklist passes (with each item listed)
+
+### When You Don't Know Something
+
+Say so. "I'm not sure" is always better than a confident guess. Specifically:
+- If you don't know the current version of a package → look it up (Section 1.3.4)
+- If you don't know whether a decision requires an ADR → check `specs/version-policy.md`
+- If you don't know whether something is in scope → check the effort file, then ask
+- If you don't know a C-4 term → check Part 5 (Glossary)
+
+---
+
+## 1.8 Precedence Order
+
+When sections of this document or project files conflict, follow this precedence (highest to lowest):
+
+1. **Part 1: Agent Governance** — always wins
+2. **Effort file** — the scope and constraints for your specific task
+3. **Specs in `done` status** — enforceable project-wide standards
+4. **Specs in `draft` status** — advisory, not enforceable
+5. **Inline code comments** — local context
+
+If you're still unsure after checking precedence, ask the user.
+
+---
+---
+
+# PART 2: PREFLIGHT ROUTING
+
+This is the routing layer. After reading Part 1, follow the steps below to determine which specs to read and which workflow to execute.
+
+---
+
+## Step 1: Confirm Part 1 Has Been Read
+
+Before proceeding, you MUST have already read Part 1 (Agent Governance) in full.
+
+- [ ] I have read Part 1
+- [ ] I can list the constraints that apply to my current task
+
+If either answer is no, STOP. Go read Part 1 first.
+
+---
+
+## Step 2: Identify Your Task Type
+
+Read the descriptions below and select the ONE task type that best matches your current work.
+
+### Type A: New Feature or Project
+Building something new from scratch — a new tool, bot, integration, service, or significant new capability.
+
+### Type B: Enhancement to Existing Feature
+Adding capability to something that already exists — a new endpoint, a new mode, a new output format.
+
+### Type C: Bug Fix
+Fixing incorrect behavior in existing code.
+
+### Type D: Trivial Change (Lightweight Path)
+A change that meets ALL of the following criteria:
+- No behavior change
+- No policy change
+- No new dependencies
+- Fewer than 20 lines changed
+- No new environment variables
+
+### Type E: Prototype Handoff
+Moving a vibe-coded or rapidly prototyped project into standard C-4 process.
+
+### Type F: Picking Up Existing Work
+Continuing a feature or project that a previous agent or engineer started.
+
+---
+
+## Step 3: Read the Required Specs
+
+Based on your task type, read the specs listed below. You MUST read ALL specs listed for your task type before writing any code. Package Management Policy is included in this document (Part 3). Other specs are in the `specs/` directory of the project.
+
+| Task Type | Required Specs |
+| :--- | :--- |
+| **A: New Feature/Project** | `project-structure-policy`, `toolchain-policy`, `packages-policy` (Part 3), `deliverables-policy`, `branch-naming-policy`, `source-file-size-policy`, `version-policy` |
+| **B: Enhancement** | `project-structure-policy`, `packages-policy` (Part 3), `deliverables-policy`, `source-file-size-policy`, `version-policy` |
+| **C: Bug Fix** | `project-structure-policy`, `packages-policy` (Part 3), `deliverables-policy`, `source-file-size-policy` |
+| **D: Trivial Change** | No additional specs required. If the change adds or updates a dependency, it is NOT trivial — reclassify as Type B or C. |
+| **E: Prototype Handoff** | `prototype-handoff-policy`, `project-structure-policy`, `toolchain-policy`, `packages-policy` (Part 3), `deliverables-policy` |
+| **F: Picking Up Work** | Read the existing effort file first, then the same specs as the original task type |
+
+**Cross-cutting spec:** `c4-brand-design-system` (Part 7) MUST be read before any work that produces UI, frontend components, dashboards, data visualizations, or customer-facing copy. This applies regardless of task type.
+
+---
+
+## Step 4: Follow the Workflow for Your Task Type
+
+### Types A, B, C: Standard Workflow
+
+1. Read the Effort Template (Part 4).
+2. Create a new effort file: `efforts/YYYY-MM-DD-short-description.md`.
+3. Fill in ALL `[REQUIRED]` fields through conversation with the user.
+4. **CHECKPOINT:** Confirm the effort file contains: owner, goal, scope, non-goals, allowed actions, cost estimate. If any `[REQUIRED]` field is empty → STOP. Gather the missing information before proceeding.
+5. Begin building. Follow `project-structure-policy` for file placement.
+6. After each logical unit of work, run validation:
+   - `npm run lint` (style check)
+   - `npm run typecheck` (type safety)
+7. **CHECKPOINT:** If any validation fails → fix the issue before writing more code. Do not accumulate failures.
+8. When feature is complete, walk through the Definition of Done checklist (see `deliverables-policy`) item by item.
+9. **CHECKPOINT:** Confirm every DOD item individually. List each item and its status. If any item fails → fix it before declaring done.
+10. Mark the effort file status as `done`. Move it to `efforts/done/`.
+11. Add a summary line to `docs/shipped.md`.
+
+### Type D: Lightweight Path
+
+1. Make the change.
+2. Run `npm run lint` and `npm run typecheck`.
+3. **CHECKPOINT:** Both pass → commit and push. Either fails → fix before proceeding.
+4. No effort file required.
+
+### Type E: Prototype Handoff
+
+1. Read the `prototype-handoff-policy` spec in full.
+2. Run through the handoff checklist item by item.
+3. **CHECKPOINT:** List each checklist item and whether it passes. All items MUST pass before engineering accepts the handoff.
+4. If any items fail → fix them or document what's needed.
+5. Once the checklist passes, engineering opens a new effort file for the hardening phase.
+
+### Type F: Picking Up Existing Work
+
+1. Read the existing effort file for this feature.
+2. Read the specs from the routing table above that match the original task type.
+3. Review the existing codebase to understand current state.
+4. **CHECKPOINT:** Before writing code, summarize: what's been built, what remains, and what specs apply. Confirm with the user if anything is ambiguous.
+5. Continue building. Follow the standard workflow from step 6 onward.
+
+---
+
+### When in Doubt
+
+- If the task type is ambiguous → ask the user.
+- If a spec seems contradictory → follow Part 1. It takes precedence over all other sections.
+- If you encounter a term you don't recognize → check Part 5 (Glossary).
+- If none of the task types fit → treat it as Type A (most governed path). It's better to over-document than under-document.
+
+---
+
+### Preflight Examples
+
+**Good: Agent follows Preflight correctly**
+```
+Agent reads Part 1 → reads Part 2 → identifies task as Type A →
+reads all required specs → creates effort file → confirms all fields →
+begins building
+```
+
+**Bad: Agent skips Preflight**
+```
+Agent reads Part 1 → starts writing code immediately → creates effort
+file after the fact → misses source-file-size-policy → ships a 400-line file
+```
+
+**Bad: Agent self-selects specs**
+```
+Agent reads Part 1 → decides it only needs project-structure-policy →
+skips deliverables-policy → misses DOD requirements → PR is rejected
+```
+
+---
+---
+
+# PART 3: PACKAGE MANAGEMENT POLICY
+
+**Status:** Done
+
+---
+
+## Purpose
+
+This spec governs how dependencies are selected, verified, installed, and maintained in all C-4 projects. The goal is to ensure every project uses current, supported, and secure packages — and that no package is installed based on stale training data or assumptions.
+
+---
+
+## Rules
+
+### 3.1 Version Requirements
+
+All packages MUST use the latest **stable** or **LTS (Long-Term Support)** release at the time of installation.
+
+- If a package offers both an LTS and a current/latest release, prefer the **LTS** release unless a specific feature from the current release is required and documented in the effort file.
+- Pre-release, alpha, beta, release candidate, and nightly versions MUST NOT be used unless explicitly approved in the effort file and documented in an ADR.
+- Pinning to an older version is permitted ONLY when a known compatibility issue exists. The reason MUST be documented as a comment in `package.json` and in the effort file.
+
+### 3.2 Version Verification (The "Trust Nothing" Rule)
+
+The agent MUST NOT rely on its training data to determine the current version of any package. Training data goes stale. The agent MUST verify the current stable/LTS version from a live, authoritative source before installing.
+
+**Acceptable verification sources (in order of preference):**
+
+1. The package's official documentation site (e.g., `react.dev`, `nodejs.org`, `expressjs.com`)
+2. The package registry (e.g., `npmjs.com/package/{name}`, `pypi.org/project/{name}`)
+3. The package's GitHub releases page (`github.com/{org}/{repo}/releases`)
+4. A documentation lookup tool (e.g., Context7) that pulls from current published docs
+
+**Verification steps:**
+
+1. Before running `npm install {package}`, look up the current stable/LTS version from one of the sources above.
+2. Confirm the version is stable (not pre-release).
+3. Install with an exact pinned version: `npm install --save-exact {package}@{version}`.
+4. Record the verified version and source in the effort file's Dependencies table.
+
+**CHECKPOINT:** If the agent cannot verify the current version from a live source, it MUST stop and ask the user rather than guessing.
+
+### 3.3 Installation Rules
+
+- All production dependencies MUST be installed with `npm install --save-exact {package}@{version}` (exact pin, no range prefix).
+- All dev-only dependencies MUST be installed with `npm install -D --save-exact {package}@{version}`.
+- The agent MUST NOT use `npm install {package}` without a version specifier. Bare installs pull "latest" from the registry, which may include pre-release tags depending on the package's publishing configuration.
+- The agent MUST NOT use wildcard version ranges (`*`), `>=` ranges, caret (`^`), or tilde (`~`) ranges in `package.json`. All versions MUST be exact pins (e.g., `"express": "4.21.2"`). Exact pinning ensures reproducible builds and prevents surprise upgrades. Version updates are handled through Dependabot (see Section 3.8 below).
+
+### 3.4 Dependency Auditing
+
+- After installing new packages, the agent SHOULD run `npm audit` and review the output.
+- If `npm audit` reports **high** or **critical** vulnerabilities in a newly installed package, the agent MUST stop and report the findings to the user before proceeding.
+- If `npm audit` reports **moderate** or **low** vulnerabilities, the agent SHOULD note them in the effort file but MAY proceed.
+
+### 3.5 Dependency Count Discipline
+
+- Every new dependency adds maintenance burden, supply chain risk, and potential attack surface. The agent SHOULD prefer built-in language/runtime features over third-party packages when the built-in solution is reasonable.
+- Before adding a package, the agent SHOULD confirm it's necessary by checking whether Node.js, TypeScript, or an already-installed dependency provides the same functionality.
+- Packages with fewer than 100 weekly downloads or no updates in the last 12 months SHOULD be flagged to the user before installation.
+
+### 3.6 Lock File Integrity
+
+- `package-lock.json` MUST be committed to version control.
+- The agent MUST NOT delete or regenerate `package-lock.json` unless resolving a documented dependency conflict.
+- Use `npm ci` (clean install from lock file) rather than `npm install` when a reproducible install is needed (e.g., on a new machine or after cloning).
+
+### 3.7 Updating Existing Dependencies
+
+When updating an existing package:
+
+1. Verify the target version from a live source (same verification process as new installs).
+2. Check the package's changelog or release notes for breaking changes.
+3. Run `npm run lint` and `npm run typecheck` after updating.
+4. **CHECKPOINT:** If either check fails after a dependency update, revert the update and document the incompatibility in the effort file before attempting an alternative approach.
+
+### 3.8 Dependabot Configuration
+
+Every C-4 project MUST include a Dependabot configuration file at `.github/dependabot.yml` to automate dependency update monitoring. Because all versions are exact-pinned, Dependabot is the mechanism that surfaces available updates as pull requests rather than silently pulling new versions at install time.
+
+The agent MUST create the following file when setting up a new project:
+
+**`.github/dependabot.yml`**
+```yaml
+# Dependabot configuration for C-4 Launchpad projects
+# Monitors dependencies and opens PRs when updates are available.
+# All versions are exact-pinned — Dependabot is how updates surface.
+
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group minor and patch updates to reduce PR noise
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        update-types:
+          - "major"
+
+  # GitHub Actions (when CI is added)
+  # Uncomment the block below when GitHub Actions workflows are in use
+  # - package-ecosystem: "github-actions"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #   labels:
+  #     - "dependencies"
+  #     - "ci"
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+```
+
+**Rules for Dependabot PRs:**
+- Minor and patch updates grouped into a single PR SHOULD be reviewed and merged weekly.
+- Major version updates get their own PR and MUST be reviewed individually — check the changelog for breaking changes before merging.
+- The agent MUST NOT auto-merge Dependabot PRs. A human MUST review and approve.
+- When merging a Dependabot PR, the effort file (if one exists for the affected feature) SHOULD be updated with the new version in the Dependencies table.
+
+---
+
+## Package Management Examples
+
+### Good: Agent installs Express correctly
+
+```
+Agent needs Express for an API server.
+
+1. Checks expressjs.com → current stable is 4.21.2
+2. Runs: npm install --save-exact express@4.21.2
+3. Records in effort file: "Express 4.21.2 (verified via expressjs.com, 2026-04-09)"
+4. Runs npm audit → no high/critical vulnerabilities
+5. Proceeds with development
+```
+
+### Bad: Agent installs from memory
+
+```
+Agent needs Express for an API server.
+
+1. "I know Express is at version 4.18.2" (stale training data)
+2. Runs: npm install express@4.18.2
+3. Installs a version that is 18 months behind on security patches
+```
+
+### Bad: Agent installs without version
+
+```
+Agent needs Express for an API server.
+
+1. Runs: npm install express
+2. Gets whatever "latest" resolves to — could be a pre-release
+3. No record of what version was intentionally chosen
+```
+
+### Good: Agent avoids unnecessary dependency
+
+```
+Agent needs to generate a UUID.
+
+1. Checks: Node.js 20+ has crypto.randomUUID() built in
+2. No package needed — uses built-in
+3. Notes in effort file: "Used crypto.randomUUID() instead of uuid package — built-in since Node 19"
+```
+
+### Bad: Agent installs stale package
+
+```
+Agent needs a date library.
+
+1. Installs moment@2.29.4
+2. Moment.js has been in maintenance mode since 2020
+3. Should have verified current ecosystem — day.js or date-fns are the maintained alternatives
+```
+
+---
+
+## Applies To
+
+This policy applies to all package managers used in C-4 projects. While the examples above reference npm, the same principles apply to pip, cargo, go modules, or any other dependency management system. The core rule is the same everywhere: **verify the current version from a live source, install explicitly, and document what you chose and why.**
+
+---
+---
+
+# PART 4: EFFORT TEMPLATE
+
+Copy and use this template for every new effort. Create the file as `efforts/YYYY-MM-DD-short-description.md`.
+
+---
+
+```markdown
+# Effort: [REQUIRED: Short descriptive name, e.g., "Meeting Transcript Summarizer"]
+
+**Status:** Draft | In Progress | Done
+**Created:** [REQUIRED: YYYY-MM-DD]
+**Owner:** [REQUIRED: Name of the person who requested or owns this work]
+**Agent:** [REQUIRED: Which AI model/tool is performing the work, e.g., "Claude 4 via Cursor", "Gemini 2.5 Pro via AI Studio"]
+
+---
+
+## Goal
+
+[REQUIRED: Describe what this effort will accomplish in 1-3 sentences. Be specific. Bad: "Build a bot." Good: "Build a Slack bot that summarizes daily meeting transcripts from Google Meet and posts a summary to #team-updates at 5pm ET."]
+
+## Scope
+
+[REQUIRED: List the specific capabilities this effort will deliver. Each item MUST be concrete and verifiable.]
+
+- [ ] [Capability 1, e.g., "Accepts Google Meet transcript URLs via Slack slash command"]
+- [ ] [Capability 2, e.g., "Generates a 3-5 sentence summary using the configured AI model"]
+- [ ] [Capability 3, e.g., "Posts summary to a configurable Slack channel"]
+
+## Non-Goals
+
+[REQUIRED: List what this effort will explicitly NOT do. This section is not optional. Non-goals prevent scope creep and give the agent clear boundaries. If something could reasonably be assumed to be in scope but isn't, list it here.]
+
+- [Non-goal 1, e.g., "No frontend UI — this is Slack-only"]
+- [Non-goal 2, e.g., "No multi-language transcript support"]
+- [Non-goal 3, e.g., "No historical transcript processing — only new transcripts"]
+
+## Allowed Agent Actions
+
+[REQUIRED: Define what the agent is permitted to do without asking a human. Anything not listed here MUST be escalated.]
+
+- [ ] Create new files in `src/`
+- [ ] Install npm packages listed in the scope
+- [ ] Create and run tests
+- [ ] Update `.env.example` with new variables
+- [ ] [Add or remove items as appropriate for this effort]
+
+**The agent MUST NOT:**
+- Modify `AGENTS.md`
+- Modify any file in `specs/`
+- Delete or overwrite existing effort files
+- Deploy to any environment
+- [Add additional restrictions as appropriate]
+
+## Cost Estimate
+
+[REQUIRED: Estimated cost for AI API usage during development. This does not need to be exact — it needs to be an informed estimate, not a guess.]
+
+| Item | Estimate |
+| :--- | :--- |
+| Estimated API calls during development | [e.g., ~200 calls] |
+| Estimated model | [e.g., GPT-4o, Claude Sonnet, Gemini Pro] |
+| Estimated total cost | [e.g., ~$5-10] |
+
+If the estimated cost exceeds $50, the effort MUST be reviewed by a C-4 lead before work begins.
+
+## Dependencies Added or Updated
+
+[REQUIRED if any packages were installed or updated. Per Part 3 (Package Management Policy), every dependency MUST be verified from a live source — never from training data.]
+
+| Package | Version | Prod/Dev | Verified From | Date Verified |
+| :--- | :--- | :--- | :--- | :--- |
+| [e.g., express] | [e.g., 4.21.2] | [Prod] | [e.g., expressjs.com] | [e.g., 2026-04-09] |
+| [e.g., jest] | [e.g., 30.0.2] | [Dev] | [e.g., npmjs.com/package/jest] | [e.g., 2026-04-09] |
+
+**npm audit result:** [e.g., "0 vulnerabilities" or "2 moderate — documented below"]
+
+## Technical Decisions
+
+[List any significant technical choices made during this effort. If a choice triggers an ADR (see specs/version-policy.md for the trigger list), note the ADR number here.]
+
+- [e.g., "Chose node-cron for scheduling over AWS EventBridge — simpler for this use case. No ADR required (no new external service)."]
+- [e.g., "Added Redis for caching summaries — ADR-003 documents the decision."]
+
+## Completion Checklist (Definition of Done)
+
+Every item MUST be checked before this effort is marked Done. The agent MUST walk through this list one item at a time and confirm each individually.
+
+- [ ] All scope items above are checked off
+- [ ] Non-goals were respected (no scope creep)
+- [ ] AGENTS.md compliance confirmed — list relevant constraints: _______________
+- [ ] ADR written for any major stack decision (if applicable)
+- [ ] At least one passing test per agent tool introduced
+- [ ] All dependencies verified from live sources and recorded in Dependencies table above
+- [ ] `npm audit` shows no high/critical vulnerabilities from newly added packages
+- [ ] `.env.example` updated with any new environment variables
+- [ ] Summary added to `docs/shipped.md`
+- [ ] C-4 lead has approved the pull request
+
+## Notes
+
+[Optional: Any context, links, or observations that don't fit above. Leave blank if not needed.]
+```
+
+---
+---
+
+# PART 5: GLOSSARY
+
+When the agent encounters an unfamiliar term in any part of this document or in project files, it MUST consult this glossary before making assumptions about meaning.
+
+---
+
+**ADR (Architecture Decision Record)** — A short document that captures a significant technical decision — what was decided, why, what alternatives were considered, and what the consequences are. ADRs are stored in `efforts/adrs/` and numbered sequentially (`ADR-001.md`, `ADR-002.md`). ADRs are never deleted. The full list of triggers that require an ADR lives in `specs/version-policy.md`. *Example:* Choosing React over Vue for a frontend, switching from REST to GraphQL, or adding Redis as a caching layer would each require an ADR.
+
+**Agent** — Any AI model acting on the codebase — regardless of provider, model version, or development environment. The scaffold does not distinguish between models. All agents follow the same rules.
+
+**AGENTS.md** — The top-level governance file (Part 1 of this document when using the master file). Contains the non-negotiable rules every agent MUST follow. Human-maintained only — no agent may modify this content. Takes precedence over all other content when there is a conflict.
+
+**Checkpoint** — A validation gate embedded within a workflow. At a checkpoint, the agent MUST pause, verify that specific conditions are met, and only proceed if all conditions pass. Checkpoints exist to catch errors early rather than discovering them at the Definition of Done. *Example:* "Confirm the effort file contains all `[REQUIRED]` fields before writing code" is a checkpoint.
+
+**Dependabot** — A GitHub-native service that monitors project dependencies and opens pull requests when newer versions are available. Because C-4 projects use exact version pinning (no `^` or `~` ranges), Dependabot is the primary mechanism for surfacing available updates. Configuration lives in `.github/dependabot.yml`. All Dependabot PRs MUST be reviewed by a human before merging.
+
+**Codebase Context** — A generated text file (`codebase-context.txt`) that provides a snapshot of the full project for AI consumption. Regenerated by running `npm run build:context`. SHOULD be regenerated any time the codebase changes significantly.
+
+**Definition of Done (DOD)** — The checklist of conditions that MUST ALL be satisfied before a feature or project can ship. Defined in `specs/deliverables-policy`. "It works" is not done.
+
+**Effort File** — A markdown document in `efforts/` that tracks a specific unit of work — a feature, project, or significant change. Created from the Effort Template (Part 4) before any code is written. Contains the owner, goal, scope, non-goals, allowed actions, cost estimate, and a completion checklist. One effort file per feature or project. *Example:* `efforts/2026-04-04-meeting-summarizer.md`
+
+**Live Source Verification** — The requirement that package versions MUST be confirmed from a current, authoritative source — not from the agent's training data. Acceptable sources include the package's official docs, npm registry, or GitHub releases page. This prevents agents from installing outdated versions based on stale knowledge. Defined in Part 3 (Package Management Policy).
+
+**Lightweight Path** — A streamlined workflow for trivial changes that meet ALL of the following criteria: no behavior change, no policy change, no new dependencies, fewer than 20 lines changed, no new environment variables. Lightweight path changes skip the effort file but still require lint and type checks to pass.
+
+**Non-Goals** — A section in the effort file that explicitly states what the feature will NOT do. This is not optional. Non-goals prevent scope creep and give the agent clear boundaries. If a potential feature addition isn't listed as a non-goal, the agent MAY interpret it as in-scope. *Example:* A summarizer bot effort file might list "No frontend UI" and "No multi-language support" as non-goals.
+
+**Preflight** — The routing system (Part 2 of this document) that every agent MUST read after Part 1. It identifies the task type and directs the agent to the specific specs required for that type of work. Preflight is the single entry point for all agent work.
+
+**Scaffold** — The C-4 Launchpad itself — the collection of files, specs, templates, and configurations that form the standard starting point for every C-4 AI development project. The scaffold is not the project; it's the foundation the project is built on.
+
+**Shipped Log** — The running record of everything built and shipped on this scaffold, maintained in `docs/shipped.md`. Updated as the final step when a feature ships.
+
+**Spec (Specification)** — A dedicated file in `specs/` that defines a specific standard or policy. Specs have a lifecycle: they start as drafts and become enforceable when marked as `done`. Only specs in `done` status are gates. Specs are long-lived and define permanent standards (as opposed to effort files, which track temporary work).
+
+**Spec Alignment Audit** — A review process where each spec is checked against the current codebase to identify violations. Used primarily during prototype handoffs to determine what needs to be fixed before engineering takes ownership.
+
+**Vibe Coding / Vibe-Coded** — Building software rapidly using AI tools with minimal manual coding — often through natural language prompts in tools designed for rapid prototyping. The scaffold supports vibe-coded projects but requires them to pass the prototype handoff checklist before they enter standard C-4 process.
+
+---
+---
+
+# PART 6: SCAFFOLD OVERVIEW (Human Context)
+
+*This section is for humans. It explains what the scaffold is, why it exists, and how the pieces fit together. The agent does not need to read this section to do its job — Parts 1-5 contain everything it needs. This section provides the context and philosophy for the humans who maintain and extend the scaffold.*
+
+---
+
+## What Is This?
+
+C-4 Launchpad is a standardized starting point for building AI-powered development projects. It provides the foundation, utilities, and rules — you describe what you want to build, the agent builds it on top.
+
+The goal: every C-4 development project — regardless of who builds it or which AI model powers it — starts from the same place. Same structure, same tools, same standards. When projects grow, get handed off, or need engineering support, nobody needs a tour.
+
+The scaffold is not the house. It's the building code. Anyone can build whatever they want — as long as it passes inspection.
+
+---
+
+## How It Works
+
+When a new project starts, the scaffold is downloaded and two commands produce a working app:
+
+```
+npm install     → install dependencies (once)
+npm run dev     → start the app, auto-restarts on save
+```
+
+From there, the agent builds. Two things happen automatically in the background:
+
+**On every save** — the app restarts with the latest changes. No manual intervention needed.
+
+**On every AI action** — a structured log entry is written recording what happened, which model was used, how long it took, and whether it succeeded. API keys and sensitive values are scrubbed automatically before anything hits the log.
+
+---
+
+## Design Principles
+
+**Consistency scales** — Any agent or engineer can open any C-4 project and immediately know where to look.
+
+**Guardrails without gates** — The rules exist but don't block progress. A project can be running in two minutes. Governance surfaces before shipping, not before starting.
+
+**Specs are active instructions** — Every standard lives in a dedicated spec file. The rules aren't passive documentation — they're what the agent is directed to read and follow first.
+
+**Safe by default** — Sensitive data is automatically scrubbed from logs. The audit trail is built in from day one.
+
+**Errors surface early** — Strict type checking and ESLint catch mistakes before the code ever runs. Inline validation gates catch process errors before they compound.
+
+**Creativity is preserved** — The scaffold doesn't prescribe what to build or what stack to use. It governs how decisions get made and documented.
+
+**Model-agnostic by design** — Every instruction is written so that any LLM — frontier or lightweight — can follow it mechanically. Numbered steps, concrete examples, and explicit validation gates replace prose descriptions and implied workflows.
+
+---
+
+## What Shaped This Scaffold
+
+The initial vision was shaped by a Spec Driven Development seminar led by Matt That. The session introduced a structured file layout — what each file owned, how responsibilities were separated, and how standards were enforced through dedicated spec files rather than tribal knowledge or READMEs that get ignored.
+
+Several ideas from that session are directly embedded: AGENTS.md as human-maintained ground truth, system-level specs vs. effort tracking, the lightweight path for trivial changes, spec lifecycle (draft → done), and the principle that ambiguity is dangerous because agents fill gaps with unspoken assumptions.
+
+The v2.0 revision added cross-model consistency: numbered step sequences, RFC 2119 language, inline checkpoints, PREFLIGHT routing, concrete examples in every spec, structured templates with labeled fields, and tool-agnostic governance.
+
+---
+
+## File & Folder Breakdown
+
+### src/ — Where the Project Gets Built
+
+| File | What it does |
+| :--- | :--- |
+| `src/index.ts` | App entry point — wiring only, no business logic |
+| `src/agent.config.ts` | All AI settings — the only place model names appear in the codebase |
+| `src/logger.ts` | Writes a structured log for every AI action; auto-redacts sensitive values |
+| `src/logger.test.ts` | Example test — the pattern to follow when writing new tests |
+
+### specs/ — The Standards Library
+
+| Spec | What it governs |
+| :--- | :--- |
+| `PREFLIGHT.md` | Routes the agent to the correct specs based on task type |
+| `GLOSSARY.md` | Definitions for all C-4-specific terms |
+| `project-structure-policy` | Where code goes, one concern per file, how to add a new feature |
+| `toolchain-policy` | Required tools, frontend framework rules, AI provider rules, logging requirements |
+| `packages-policy` | How dependencies are selected, verified, installed, and maintained |
+| `branch-naming-policy` | Branch format: `type/short-description` (e.g., `feat/user-auth`) |
+| `deliverables-policy` | What "done" means — nothing ships without every item checked |
+| `source-file-size-policy` | 200-line soft limit, 350-line hard limit — enforced at merge |
+| `version-policy` | Semver, ADR numbering, and the full list of triggers that require an ADR |
+| `prototype-handoff-policy` | What a vibe-coded prototype must have before engineering takes ownership |
+
+### efforts/ — The Work Log
+
+**TEMPLATE.md** — Structured template with labeled `[REQUIRED]` fields. One effort file per project.
+
+**adr-template.md** — Copy this when a major decision needs to be documented.
+
+**adrs/** — Where all ADRs live. Named sequentially: `ADR-001.md`, `ADR-002.md`. Never deleted.
+
+**done/** — Completed effort files move here when a project ships.
+
+### Supporting Files
+
+| File | Purpose |
+| :--- | :--- |
+| `Dockerfile` | Packages the app to run identically everywhere |
+| `docker-compose.yml` | Spins up the full local stack (app + Redis) with one command |
+| `package.json` | Project manifest, dependency list, and npm script shortcuts |
+| `.env.example` | Settings template with plain-English explanations for every variable |
+| `.github/dependabot.yml` | Automated dependency update monitoring — opens PRs when new versions are available |
+| `docs/contributing.md` | Rules for changing the scaffold itself — requires lead review |
+| `docs/shipped.md` | Running log of everything built and shipped on this scaffold |
+| `scripts/build-context.js` | Regenerates `codebase-context.txt` — run with `npm run build:context` |
+
+---
+
+## In Practice
+
+**Scenario 1: "Build me a Slack bot that summarizes meeting transcripts"**
+
+Someone drops this ask into their AI development environment. The agent reads Part 1, then Part 2, which routes it to `project-structure-policy` and `deliverables-policy`. Before a line of code is written, it creates an effort file: `efforts/2026-04-04-meeting-summarizer.md`. It fills in the owner, the goal, scope, non-goals, allowed actions, and a cost estimate.
+
+**CHECKPOINT:** The agent confirms the effort file is complete before proceeding.
+
+Then it builds. It creates `src/summarizer.ts` for the transcript logic, `src/slack.ts` for the integration, wires both into `src/index.ts`, adds `SLACK_BOT_TOKEN` to the settings template, and writes tests. Every AI call fires a log entry automatically. When the work is ready, the effort file is marked done, a line is added to the shipped log, and a C-4 lead approves. Shipped.
+
+**Scenario 2: "Something's broken in production — I need to know what happened"**
+
+A Slack bot starts returning errors. Because every AI action was logged, there's a clean trail wherever logs land. An engineer searches for error entries, finds the specific event, sees the action that failed, the model used, and the duration — it timed out. The transcript was too long. The fix is clear. The engineer opens the codebase, immediately finds `src/summarizer.ts` because the structure is predictable, makes the fix, and pushes. Twenty-five minutes from "something's broken" to fix.
+
+**Scenario 3: "Add a daily digest to the existing summarizer"**
+
+Three months later, a new ask. The agent reads Part 1, then Part 2, then the existing effort history. Because the structure followed the spec, it immediately knows `src/summarizer.ts` owns the logic and `src/slack.ts` handles sending. It opens a new effort file, creates `src/digest.ts`, adds a scheduled trigger, updates the settings template, writes tests. No archaeology. The new agent reads the same specs, follows the same structure, and picks up exactly where the last one left off.
+
+**Scenario 4: Bringing a vibe-coded prototype into engineering**
+
+A non-engineering team member built an app using a rapid prototyping tool. It works. People want to use it seriously. Before engineering takes it over, the prototype creator runs through the prototype handoff checklist. Engineering runs a spec alignment audit, a few failures come back, the creator fixes them, engineering accepts the handoff and opens a new effort file for the hardening phase. The creative work is preserved. The black box is gone.
+
+---
+
+## When to Loop in Engineering
+
+The scaffold carries projects far without engineering involvement. But loop them in when:
+
+- The right model or provider for the use case isn't clear
+- A real database is needed
+- External communications are being added (email, Slack, webhooks)
+- A file is near its size limit and the right split isn't obvious
+- Cost stakes are real and estimates are guesses
+- A prototype is ready for handoff and the audit is returning failures
+
+Engineering's role is to review, advise, and sign off — not to take over.
+
+---
+
+## Definition of Done
+
+Nothing ships without ALL of these confirmed:
+
+1. Effort file is complete with all `[REQUIRED]` fields filled in, including Non-Goals
+2. AGENTS.md compliance confirmed
+3. ADR written for any major stack decision made during this effort
+4. All dependencies verified from live documentation and recorded in the effort file
+5. `npm audit` shows no high/critical vulnerabilities from newly added packages
+6. At least one passing test per agent tool introduced
+7. `.env.example` updated with any new environment variables
+8. Summary added to `docs/shipped.md`
+9. C-4 lead has approved the pull request
+
+**CHECKPOINT:** The agent MUST walk through this list item by item and confirm each one before declaring the work complete. "It works" is not done. Done means the next person — human or agent — can pick this up and understand it.
+
+---
+
+## Why This Scaffold Works Across Models
+
+**Mechanical workflows over inferred behavior.** Every workflow is a numbered sequence of steps. The agent doesn't need to figure out what to do next — it just follows the list.
+
+**Preflight as a single entry point.** Instead of requiring the agent to judge which specs are relevant, Preflight provides a routing table. Judgment is removed from the critical path.
+
+**Inline validation checkpoints.** Rather than checking everything at the end, checkpoints are placed at key decision points throughout the workflow.
+
+**RFC 2119 language.** "MUST," "SHOULD," and "MAY" are parsed more reliably across models than "always," "never," or "try to."
+
+**Concrete examples in every spec.** Models follow examples more reliably than abstract rules.
+
+**Structured templates with labeled fields.** Fields marked `[REQUIRED]` with explicit instructions produce consistent output across models.
+
+**Tool-agnostic governance.** The specs reference "the agent" and "the development environment" — never specific products.
+
+---
+---
+
+# PART 7: C-4 ANALYTICS BRAND + DESIGN SYSTEM
+
+**Status:** Done
+**Owner:** C-4 Engineering
+**Last Updated:** 2026-04-09
+
+This section is the single source of truth for building anything that
+carries the C-4 Analytics brand. The aesthetic is precise, confident,
+and industrial. It favors sharp edges, high contrast, and intentional
+color over soft SaaS trends. Every UI, dashboard, and piece of copy
+should feel like it was built by people who understand performance
+marketing at a deep level.
+
+---
+
+## Ground Truth
+
+- REQ-GROUND-TRUTH: `AGENTS.md` is human-maintained only. Agents may never modify that file.
+- REQ-LOCALITY-DATETIME: All documented dates and times use local EST/EDT format: YYYY-MM-DD HH:mm:ss EST/EDT.
+- REQ-SPEC-BEFORE-WORK: Update the owning spec before starting any work. Create a new spec only when no existing spec reasonably owns the change.
+- REQ-SCOPE-DISCIPLINE: Do not change behavior outside active spec or effort scope without explicit operator approval.
+- REQ-TRACEABILITY: The operator controls traceability actions. Agents must not commit, merge, or deploy unless explicitly instructed.
+- REQ-BRAND-DESIGN: All UI, copy, and collateral generation must follow the rules and tokens defined in `c4branding.md`. Agents may not make visual or copy decisions that contradict or fall outside that file.
+
+---
+
+## When to Use This Section
+
+* Generating HTML, CSS, React, or Tailwind components.
+* Styling dashboards, metric cards, or data visualizations.
+* Writing any copy that will be seen by dealers, prospects, OEM
+  partners, or prospective employees.
+* Building collateral layouts (sell sheets, case studies, one-pagers).
+* Refactoring existing UI or content to match brand standards.
+
+---
+
+## 7.1 Color Palette
+
+The palette is built around two brand accents and a warm neutral
+grayscale. Both light and dark modes are fully supported.
+
+**Light mode is the default.** The C-4 Analytics website, collateral,
+and most external-facing materials use light backgrounds. Any tool,
+dashboard, or app should default to light mode unless the user
+explicitly toggles to dark. Content surfaced to leadership or
+presented in executive contexts should always use light mode.
+
+Dark mode is available as a toggle for users who prefer it, and for
+specific contexts (hero sections, footer bars, stat callout bars)
+where dark backgrounds are part of the established design language.
+
+### Brand Accents
+
+| Name | Hex | PANTONE | CMYK | RGB | Role |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Victory Orange** | `#FD5900` | PMS Orange 021 C | 0/64/99/1 | 253/89/0 | Primary action, CTAs, stat callouts, section headers, hero eyebrows. The dominant brand color. |
+| **NexGen Blue** | `#00A4FD` | 2995 C | 68/26/0/0 | 0/164/253 | Secondary accent only. Use sparingly for links, informational states, and data-viz differentiation. Never as a primary action color. |
+
+### Warm Grayscale
+
+| Token | Hex | Name |
+| :--- | :--- | :--- |
+| `--white` | `#FFFFFF` | White |
+| `--off-white` | `#F2F2F2` | Off-White / Base Light |
+| `--light-gray` | `#E0DEDD` | Light Gray |
+| `--warm-gray-1` | `#B2ACAC` | Warm Gray 1 |
+| `--warm-gray-2` | `#8E8382` | Warm Gray 2 |
+| `--warm-gray-3` | `#675F5E` | Warm Gray 3 |
+| `--mid` | `#453F3F` | Mid |
+| `--dark-3` | `#272525` | Dark 3 |
+| `--dark-2` | `#1E1A1A` | Dark 2 |
+| `--dark` | `#131010` | Base Dark |
+
+### Dark Mode Tokens (default for apps and dashboards)
+
+| Role | Token | Hex | Tailwind |
+| :--- | :--- | :--- | :--- |
+| App Background | `--bg` | `#131010` | `bg-[#131010]` |
+| Surface / Card | `--surface` | `#1E1A1A` | `bg-[#1E1A1A]` |
+| Elevated Surface | `--surface-elevated` | `#272525` | `bg-[#272525]` |
+| Input Background | `--input-bg` | `#131010` | `bg-[#131010]` |
+| Border | `--border` | `#453F3F` | `border-[#453F3F]` |
+| Border Subtle | `--border-subtle` | `#272525` | `border-[#272525]` |
+| Text: Heading | `--text-heading` | `#FFFFFF` | `text-white` |
+| Text: Body | `--text-body` | `#B2ACAC` | `text-[#B2ACAC]` |
+| Text: Muted | `--text-muted` | `#8E8382` | `text-[#8E8382]` |
+| Text: Disabled | `--text-disabled` | `#675F5E` | `text-[#675F5E]` |
+| Primary Action | `--action` | `#FD5900` | `bg-[#FD5900]` |
+| Primary Hover | `--action-hover` | `#E04F00` | `hover:bg-[#E04F00]` |
+| Secondary Accent | `--accent` | `#00A4FD` | `text-[#00A4FD]` |
+| Success | `--success` | `#2ECC71` | `text-[#2ECC71]` |
+| Warning | `--warning` | `#FD5900` | `text-[#FD5900]` |
+| Error | `--error` | `#E74C3C` | `text-[#E74C3C]` |
+
+### Light Mode Tokens (collateral, documents, external pages)
+
+| Role | Token | Hex | Tailwind |
+| :--- | :--- | :--- | :--- |
+| App Background | `--bg` | `#FFFFFF` | `bg-white` |
+| Surface / Card | `--surface` | `#F2F2F2` | `bg-[#F2F2F2]` |
+| Elevated Surface | `--surface-elevated` | `#FFFFFF` | `bg-white` |
+| Input Background | `--input-bg` | `#F2F2F2` | `bg-[#F2F2F2]` |
+| Border | `--border` | `#E0DEDD` | `border-[#E0DEDD]` |
+| Border Subtle | `--border-subtle` | `#F2F2F2` | `border-[#F2F2F2]` |
+| Text: Heading | `--text-heading` | `#131010` | `text-[#131010]` |
+| Text: Body | `--text-body` | `#453F3F` | `text-[#453F3F]` |
+| Text: Muted | `--text-muted` | `#8E8382` | `text-[#8E8382]` |
+| Text: Disabled | `--text-disabled` | `#B2ACAC` | `text-[#B2ACAC]` |
+| Primary Action | `--action` | `#FD5900` | `bg-[#FD5900]` |
+| Primary Hover | `--action-hover` | `#E04F00` | `hover:bg-[#E04F00]` |
+| Secondary Accent | `--accent` | `#00A4FD` | `text-[#00A4FD]` |
+| Success | `--success` | `#2ECC71` | `text-[#2ECC71]` |
+| Warning | `--warning` | `#FD5900` | `text-[#FD5900]` |
+| Error | `--error` | `#E74C3C` | `text-[#E74C3C]` |
+
+### CSS Custom Properties (copy-paste ready)
+
+```css
+:root {
+  /* Brand Accents */
+  --orange: #FD5900;
+  --blue: #00A4FD;
+
+  /* Warm Grayscale */
+  --white: #FFFFFF;
+  --off-white: #F2F2F2;
+  --light-gray: #E0DEDD;
+  --warm-gray-1: #B2ACAC;
+  --warm-gray-2: #8E8382;
+  --warm-gray-3: #675F5E;
+  --mid: #453F3F;
+  --dark-3: #272525;
+  --dark-2: #1E1A1A;
+  --dark: #131010;
+}
+
+/* Dark Mode (default) */
+[data-theme="dark"], .theme-dark {
+  --bg: var(--dark);
+  --surface: var(--dark-2);
+  --surface-elevated: var(--dark-3);
+  --input-bg: var(--dark);
+  --border: var(--mid);
+  --border-subtle: var(--dark-3);
+  --text-heading: var(--white);
+  --text-body: var(--warm-gray-1);
+  --text-muted: var(--warm-gray-2);
+  --text-disabled: var(--warm-gray-3);
+  --action: var(--orange);
+  --action-hover: #E04F00;
+  --accent: var(--blue);
+}
+
+/* Light Mode */
+[data-theme="light"], .theme-light {
+  --bg: var(--white);
+  --surface: var(--off-white);
+  --surface-elevated: var(--white);
+  --input-bg: var(--off-white);
+  --border: var(--light-gray);
+  --border-subtle: var(--off-white);
+  --text-heading: var(--dark);
+  --text-body: var(--mid);
+  --text-muted: var(--warm-gray-2);
+  --text-disabled: var(--warm-gray-1);
+  --action: var(--orange);
+  --action-hover: #E04F00;
+  --accent: var(--blue);
+}
+```
+
+---
+
+## 7.2 Typography
+
+### Font Stack
+
+```
+font-family: 'Articulat CF', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+```
+
+* **Articulat CF** is the primary brand typeface.
+* **Helvetica Neue** is the web/system fallback.
+* **Never use Barlow.** Never use serif fonts.
+
+### Type Scale
+
+| Element | Weight | Size | Tracking | Transform | Color Token |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| H1 | 800 (ExtraBold) | 36-44px | -0.02em (tight) | None | `--text-heading` |
+| H2 | 800 | 26-32px | -0.01em | None | `--text-heading` |
+| H3 | 700 (Bold) | 18-22px | Normal | None | `--text-heading` |
+| Body | 400 (Regular) | 13.5-15px | Normal | None | `--text-body` |
+| Body Lead | 500 (Medium) | 15-16px | Normal | None | `--text-body` |
+| Label / Eyebrow | 700 | 9-10px | 0.12-0.18em (wide) | Uppercase | `--action` or `--text-muted` |
+| Button | 700 | 11px | 0.1em | Uppercase | White on orange |
+| Stat Number | 800 | 28-44px | -0.02em | None | `--action` or `--text-heading` |
+| Stat Label | 700 | 9-10px | 0.1em | Uppercase | `--text-muted` |
+| Nav Item | 500 | 13px | 0.04em | Uppercase | `--text-muted` (inactive) / `--action` (active) |
+| Caption / Fine Print | 400 | 8.5-11px | Normal | None | `--text-muted` |
+
+### Typographic Rules
+
+* No orphan words (single word alone on the last line of a paragraph).
+* No widows (single line of a paragraph stranded at the top of a new column or page).
+* No rivers (vertical white-space channels running through body copy).
+* No bad rags (uneven right edges that create distracting shapes).
+* If any of these occur, rewrite the copy or adjust line breaks to fix.
+
+---
+
+## 7.3 Component Patterns
+
+### Cards and Surfaces
+
+Use borders to define edges. Never use drop shadows.
+
+```html
+<!-- Dark mode card -->
+<div class="bg-[#1E1A1A] border border-[#453F3F] rounded-lg p-6">
+  <h3 class="text-white font-bold text-lg tracking-tight">Card Title</h3>
+  <p class="text-[#B2ACAC] text-sm mt-2">Card body text.</p>
+</div>
+
+<!-- Light mode card -->
+<div class="bg-[#F2F2F2] border border-[#E0DEDD] rounded-lg p-6">
+  <h3 class="text-[#131010] font-bold text-lg tracking-tight">Card Title</h3>
+  <p class="text-[#453F3F] text-sm mt-2">Card body text.</p>
+</div>
+```
+
+### Buttons
+
+```html
+<!-- Primary -->
+<button class="bg-[#FD5900] hover:bg-[#E04F00] text-white font-bold
+  uppercase tracking-widest text-xs py-3 px-6 rounded-sm">
+  Get Started
+</button>
+
+<!-- Ghost / Secondary -->
+<button class="bg-transparent border border-[#FD5900] text-[#FD5900]
+  hover:bg-[#FD5900]/10 font-bold uppercase tracking-widest text-xs
+  py-3 px-6 rounded-sm">
+  Learn More
+</button>
+```
+
+### Inputs and Forms
+
+```html
+<!-- Dark mode input -->
+<input class="bg-[#131010] border border-[#453F3F] text-white rounded
+  focus:border-[#FD5900] focus:ring-1 focus:ring-[#FD5900]
+  placeholder:text-[#675F5E] px-4 py-2.5 text-sm" />
+
+<!-- Light mode input -->
+<input class="bg-[#F2F2F2] border border-[#E0DEDD] text-[#131010] rounded
+  focus:border-[#FD5900] focus:ring-1 focus:ring-[#FD5900]
+  placeholder:text-[#B2ACAC] px-4 py-2.5 text-sm" />
+```
+
+### Navigation
+
+```html
+<!-- Active nav item -->
+<a class="border-l-4 border-[#FD5900] pl-4 text-white font-medium">
+  Dashboard
+</a>
+
+<!-- Inactive nav item -->
+<a class="border-l-4 border-transparent pl-4 text-[#8E8382]
+  hover:text-white font-medium">
+  Reports
+</a>
+```
+
+### Stat / Metric Cards
+
+```html
+<div class="flex flex-col gap-1">
+  <span class="text-[#FD5900] text-4xl font-extrabold tracking-tight">
+    142%
+  </span>
+  <span class="text-[#8E8382] text-[9px] font-bold uppercase tracking-widest">
+    Increase in Paid Search Conversions
+  </span>
+</div>
+```
+
+### Orange Rule (signature brand element)
+
+```css
+.rule-orange {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    #FD5900 0%,
+    rgba(253, 89, 0, 0.15) 80%,
+    transparent 100%
+  );
+}
+```
+
+---
+
+## 7.4 Dashboard and Data Visualization
+
+### Layout Principles
+
+* Clean, high-contrast layouts. Maximize data density without clutter.
+* Dashboards default to light mode (like the rest of the brand). Dark mode is available as a user toggle.
+* Numbers use `--text-heading` and bold weight. Labels use `--text-muted` and uppercase.
+* Use `--orange` for primary KPI highlights. Use `--blue` only when a second data series needs visual differentiation.
+
+### Chart Color Sequence
+
+1. `#FD5900` (Victory Orange) - primary series
+2. `#00A4FD` (NexGen Blue) - secondary series
+3. `#B2ACAC` (Warm Gray 1) - tertiary / benchmark
+4. `#675F5E` (Warm Gray 3) - quaternary
+5. `#272525` (Dark 3) - background reference lines
+
+### Data Viz Rules
+
+* Grid lines and axis lines should use `--border-subtle`, never full black or full white.
+* Tooltips use `--surface-elevated` background with `--border`.
+* Positive change indicators use `--success` (`#2ECC71`). Negative use `--error` (`#E74C3C`).
+* Neutral / flat use `--text-muted`.
+
+---
+
+## 7.5 Spacing and Layout
+
+All spacing is based on a **4px grid**. Use multiples of 4 for padding, margins, and gaps.
+
+| Token | Value | Use |
+| :--- | :--- | :--- |
+| `--space-1` | 4px | Tight inner gaps (icon-to-label, inline elements) |
+| `--space-2` | 8px | Default inner padding, small gaps |
+| `--space-3` | 12px | Compact card padding, list item spacing |
+| `--space-4` | 16px | Standard card padding, form field gaps |
+| `--space-6` | 24px | Section padding within a content block |
+| `--space-8` | 32px | Major section breaks, card-to-card spacing |
+| `--space-10` | 40px | Large section gaps |
+| `--space-14` | 56px | Page padding (collateral `--page-pad`) |
+
+Content areas max out at **1200px** for web layouts. Collateral pages are fixed at **816px** (8.5" at 96dpi). Use CSS Grid or Flexbox. Favor 2, 3, or 4-column grids for feature/benefit sections.
+
+---
+
+## 7.6 Iconography
+
+The C-4 Analytics website uses **Font Awesome (Free)** icons as the standard icon library.
+
+**Treatment A: Contained Icons** — White icons inside orange rounded-square containers. Used in multi-column feature grids.
+
+```html
+<div class="w-12 h-12 bg-[#FD5900] rounded-xl flex items-center justify-center">
+  <i class="fa-solid fa-link text-white text-lg"></i>
+</div>
+```
+
+**Treatment B: Standalone Icons** — Orange icons with no container, placed above headlines or alongside content blocks.
+
+```html
+<i class="fa-solid fa-power-off text-[#FD5900] text-[30px]"></i>
+```
+
+Icon library: **Font Awesome Free**. Solid weight is the default. Keep icon choices literal and intuitive. Do not use icons as pure decoration.
+
+---
+
+## 7.7 Animation and Motion
+
+Motion should feel deliberate and mechanical, not playful or bouncy. Standard transition: `all 150ms ease`. Panels/drawers: `all 200ms ease`.
+
+Anti-patterns: no spring/bounce easing, no animations longer than 300ms, no entrance animations on page load, no animated gradients or pulsing glows.
+
+---
+
+## 7.8 Error States, Empty States, and System Feedback
+
+* Error messages use `--error` (`#E74C3C`) for text and border highlights. Background tint: `rgba(231, 76, 60, 0.08)` in light mode, `rgba(231, 76, 60, 0.12)` in dark mode.
+* Empty states: short, direct message in `--text-muted`. No illustrations or mascots. Example: "No data for the selected period."
+* Success states use `--success` (`#2ECC71`). Toast notifications bottom-right, auto-dismiss after 4 seconds. Brief, factual messages: "Changes saved."
+* Loading: skeleton screens for initial loads, inline spinner for button actions > 300ms. Spinner color: `--action`.
+
+---
+
+## 7.9 Dark Sections Within Light Mode
+
+The brand uses dark-background sections within light-mode layouts for visual rhythm and hierarchy.
+
+**When dark sections are used:** hero banners, stat callout bars, footers, CTA blocks, testimonial blocks.
+
+**When dark sections are NOT used:** body content sections, form areas, data tables.
+
+These use the brand's dark palette tokens (`--dark`, `--dark-2`, `--dark-3`) directly and do not require or imply that the user has toggled to dark mode.
+
+---
+
+## 7.10 Brand Voice and Copy Rules
+
+### Identity Rules (non-negotiable)
+
+* Always write **C-4 Analytics** in full. Never abbreviate to "C-4" alone in visible copy.
+* Never refer to C-4 Analytics as an "agency." We are an automotive digital marketing solution and/or a business partner.
+* No em dashes. Use commas, periods, semicolons, or rewrite the sentence.
+* No exclusivity language. Never say or imply "we work with you and not your competitors." Instead: we create truly customized solutions for every dealer in every market.
+* **"Advanced Automotive Marketing for a Digital-First World"** is an approved tagline.
+
+### Trademarked / Proprietary Terms
+
+Use the trademark symbol (™) on first reference in any document.
+
+* **The 4Cs of Success™:** Command, Captivate, Close, Cultivate
+* **Automotive In-Market Network™ (AIM™)**
+* **Search Inventory Marketing™ (SIM™)**
+* **Specials and Incentives Management Platform™ (SIMPL™)**
+
+### Voice: Dealer-Facing
+
+The voice reads like a sharp, experienced media director giving a dealer an honest assessment over coffee. Not a presentation. Not a pitch. A conversation between people who both want the same outcome.
+
+* **Confident without being arrogant.** State what you know and let data do the heavy lifting.
+* **Practitioner-level, not vendor-speak.** Use the dealer's language naturally: "moving metal," "low funnel," "why buy."
+* **Human but not casual.** Contractions are fine. Plain sentences are good. Maintain professionalism underneath the approachability.
+* **Challenging without being preachy.** "Here is what the data says" beats "you need to wake up."
+* **Urgent without being pushy.** Create momentum without pressure tactics.
+* **Data-informed, not data-heavy.** Insight first, stat to validate.
+
+### Voice: Prospective Employees
+
+* Ambitious and growth-oriented. Momentum is real.
+* Culture-forward without being performative. Lead with the work, the mission, the people.
+* Grounded in outcomes.
+* Direct and honest. Set real expectations.
+
+### Copy Style Rules
+
+* Succinct, clear, and sharp. Favor clarity over style.
+* Confident and persuasive, never preachy, salesy, or smarmy.
+* Sell the outcome and the partnership, not the playbook.
+* Core audiences: automotive dealers, dealer group leadership, OEM program managers, and prospective employees.
+* Headlines and selling points can be punchy. Body copy stays clear.
+* No typos. No grammatical errors. Proofread everything.
+
+---
+
+## 7.11 Photography and Imagery
+
+### Visual Identity Pillars
+
+* High-Performance Automotive: Speed, control, power.
+* Modern Luxury Lifestyle: Refinement, affluence, taste.
+* Tech-Forward Storytelling: Precision, innovation, digital fluency.
+* Creative Boldness: Vibrant palettes, rich textures, clean compositions.
+
+### Prioritize
+
+* Automotive detail shots: emblems, interiors, wheels, headlights, textures.
+* Abstract materials and macro textures: carbon fiber, woodgrain, leather, gemstones.
+* Professional studio lighting.
+* Editorial-inspired portraiture: stylized, color-forward, confident individuals.
+* Clean, modern dealership facilities.
+
+### Avoid
+
+* Outdated or low-resolution car lot images.
+* Exaggerated expressions or unnatural interactions.
+* Posed portraits.
+* Visual clutter.
+* Cliched dealership visuals: balloons, streamers, overly staged showroom scenes.
+
+---
+
+## 7.12 Logo Usage
+
+The C-4 Analytics logo is not bundled in this file. If you need to place the logo, **ask the user to provide the logo file.** Use a placeholder with a clear label (e.g., "[C-4 Logo]") until the actual file is supplied.
+
+* Top-left of navigation bars and in footer areas.
+* Light (white) variant on dark backgrounds. Dark variant on light backgrounds.
+* Include ® at first use in a document or page.
+* Never distort, mask, recolor, shadow, outline, or alter proportions.
+
+---
+
+## 7.13 Collateral Layout Specs
+
+| Parameter | Value |
+| :--- | :--- |
+| Page size | 816 x 1056 px (8.5 x 11 in at 96 dpi, letter portrait) |
+| Page padding | 56px (`--page-pad`) |
+| Font stack | Articulat CF, Helvetica Neue, Helvetica, Arial, sans-serif |
+| Orange `#FD5900` | Stat bars, CTA buttons, section headers, hero eyebrows, major visual moments |
+| Blue `#00A4FD` | Small accents only |
+| Footer (every page) | Phone: 617-250-8888. URL: c-4analytics.com. Orange CTA button linking to the MDPA page. No office location. |
+
+---
+
+## 7.14 Accessibility
+
+* All text must meet a minimum contrast ratio of 5:1 against its background.
+* Orange text (`#FD5900`) on white (`#FFFFFF`) does not meet 5:1 for body copy. Use orange for headings, labels, and UI elements only. Body copy on light backgrounds must use `--mid` (`#453F3F`) or darker.
+* Orange text on `--dark` (`#131010`) passes. Use freely in dark mode.
+* White text on orange backgrounds passes. Use for CTA button labels.
+* NexGen Blue (`#00A4FD`) on `--dark` passes. On white, use only for links and interactive elements.
+
+---
+
+## 7.15 Anti-Patterns (strict prohibitions)
+
+1. **No drop shadows for depth.** Use borders to define card and surface edges. Do not use `shadow-md`, `shadow-lg`, or box-shadow for structural depth.
+2. **No large border radii.** CTA buttons use ~3px radius. Cards use `rounded-lg` at most. No `rounded-xl`, `rounded-2xl`, or `rounded-full` (exceptions: circular avatars and icon containers per Section 7.6).
+3. **No serif fonts.** Sans-serif only. Never use Barlow.
+4. **No cool grays.** Always use the warm grayscale tokens. Do not use Tailwind's default `gray` or `slate` scales.
+5. **No gradient backgrounds on cards or surfaces.** Gradients are reserved for the orange rule element, hero image overlays, and the right-edge orange accent line.
+6. **No Blue as primary action.** NexGen Blue is secondary only. Never replace Victory Orange for CTAs or primary buttons.
+7. **No bubbly or "friendly SaaS" aesthetics.** Avoid soft shadows, pastel accents, oversized padding, or playful illustration styles.
+
+---
+
+*This document is maintained by C-4 engineering leads. To propose a change, follow the process in `docs/contributing.md`.*

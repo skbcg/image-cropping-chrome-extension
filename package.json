@@ -1,0 +1,29 @@
+{
+  "name": "oem-image-scraper-chrome-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --config vite.content.config.ts --watch",
+    "build": "vite build --config vite.background.config.ts && vite build --config vite.content.config.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.0.317",
+    "@types/react": "19.0.12",
+    "@types/react-dom": "19.0.4",
+    "@eslint/js": "9.24.0",
+    "@vitejs/plugin-react": "4.3.4",
+    "eslint": "9.24.0",
+    "eslint-plugin-react-hooks": "5.2.0",
+    "globals": "16.0.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.29.1",
+    "vite": "6.2.5"
+  }
+}
